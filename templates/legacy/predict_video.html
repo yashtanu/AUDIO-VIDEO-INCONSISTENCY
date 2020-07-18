@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+    <body>
+    <form action="/video_results" method="post" enctype="multipart/form-data">
+        Select Video to upload:
+        <input type="file" name="video" id="video">
+        <input type="submit" value="Upload Video" name="submit">
+    </form>
+    <p>Chance of Audio Matching with Speaker: {{ data }}</p>
+    </body>
+
+</html>

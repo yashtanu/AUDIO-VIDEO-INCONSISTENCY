@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Display Webcam Stream</title>
+ 
+<style>
+#container {
+	margin: 0px auto;
+	width: 500px;
+	height: 375px;
+	border: 10px #333 solid;
+}
+#videoElement {
+	width: 500px;
+	height: 375px;
+	background-color: #666;
+}
+</style>
+</head>
+ 
+<body>
+<div id="container">
+	<video autoplay="true" id="videoElement">
+    </video>
+    <button onclick="startRecording()">Start Recording</button>
+</div>
+<script>
+var video = document.querySelector("#videoElement");
+var streamRecorder;
+var webcamstream;
+if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+        .then(function (stream) {
+            console.log('Stream data check::::', stream);
+            video.srcObject  = stream;
+            webcamstream = stream;
+
+            var types = ["video/webm", 
+             "audio/webm", 
+             "video/webm\;codecs=vp8", 
+             "video/webm\;codecs=daala", 
+             "video/webm\;codecs=h264", 
+             "audio/webm\;codecs=opus", 
+             "video/mpeg",
+             ];
+
+for (var i in types) { 
+  console.log( "Is " + types[i] + " supported? " + (MediaRecorder.isTypeSupported(types[i]) ? "Maybe!" : "Nope :(")); 
+}
+
+    })
+    .catch(function (error) {
+        console.log("Something went wrong:", error);
+    });
+}
+
+function startRecording() {
+    console.log('Startinmg now:', webcamstream);
+    // streamRecorder = webcamstream.record();
+    // setTimeout(sendStreamData, 2000);
+    let recorder = new MediaRecorder(webcamstream, {
+        mimeType: 'video/webm'
+    });
+    let data = [];
+ 
+    recorder.ondataavailable = event => data.push(event.data);
+    // recorder.ondataavailable = videoDataHandler;
+    recorder.start(timeslice=128);
+
+    console.log(recorder.state + " for " + (30000) + " seconds...");
+
+    setTimeout(function() {
+        recorder.stop();
+        
+        postVideoToServer(new Blob(data.splice(0, data.length)));
+        //data = [];
+
+        //recorder.start(timeslice=30000);
+    }, 10000);
+}
+
+function videoDataHandler (event) {
+    var blob = event.data;
+    // document.getElementById(‘blob-video’).setAttribute(‘src’, window.URL.createObjectURL(blob));
+};
+
+function sendStreamData(data) {
+    console.log('Final Values:', data);
+    // streamRecorder = streamData.record();
+    // streamRecorder.getRecordedData(postVideoToServer);
+    postVideoToServer(data);
+}
+
+function postVideoToServer(videoblob) {
+    // var data = {};
+    // data.video = videoblob;
+    // data.metadata = 'video metadata';
+    // data.action = "upload_video";
+    // console.log('DATA:', data);
+    var formData = new FormData();
+    formData.append('video', videoblob);
+    fetch('http://127.0.0.1:5000/webcam_api', {
+        method: 'POST',
+        body: formData
+    }).then(function(response) {
+        console.log('Response 1:', response);
+        return response.json();
+    }).then(function(result) {
+        console.log('Final result:', result);
+    })
+}
+</script>
+</body>
+</html>;
